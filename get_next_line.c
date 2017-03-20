@@ -52,23 +52,21 @@ static int		copy_to_new_line(char **dest, char *source)
 {
 	int	i;
 	int	j;
-	int	k;
 
 	i = 0;
-	k = 0;
+	j = 0;
 	while (source[i++])
 		if (source[i] == '\n')
 			break ;
-	j = i;
 	if (!(*dest = ft_strnew(1)))
 		return (0);
-	while (source[k] && k < i)
+	while (source[j] && j < i)
 	{
-		if (!(*dest = add_char(*dest, source[k])))
+		if (!(*dest = add_char(*dest, source[j])))
 			return (0);
-		k++;
+		j++;
 	}
-	return (j);
+	return (i);
 }
 
 int			get_next_line(const int fd, char **line)
