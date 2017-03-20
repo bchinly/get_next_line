@@ -25,7 +25,6 @@ static t_list		*get_file(t_list **file, int fd)
 	}
 	tmp = ft_lstnew("\0", fd);
 	ft_lstadd(file, tmp);
-	tmp = *file;
 	return (tmp);
 }
 
