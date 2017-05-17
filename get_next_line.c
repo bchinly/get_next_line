@@ -6,15 +6,15 @@
 /*   By: bchin <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/03/16 18:45:52 by bchin             #+#    #+#             */
-/*   Updated: 2017/03/16 18:46:30 by bchin            ###   ########.fr       */
+/*   Updated: 2017/03/21 19:49:20 by bchin            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-static t_list		*get_file(t_list **file, int fd)
+static t_list	*get_file(t_list **file, const int fd)
 {
-	t_list		*tmp;
+	t_list *tmp;
 
 	tmp = *file;
 	while (tmp)
@@ -23,75 +23,66 @@ static t_list		*get_file(t_list **file, int fd)
 			return (tmp);
 		tmp = tmp->next;
 	}
-	tmp = ft_lstnew("\0", fd);
-	ft_lstadd(file, tmp);
-	return (tmp);
+	ft_lstadd(file, ft_lstnew(NULL, 0));
+	(*file)->content_size = fd;
+	(*file)->content = ft_strnew(0);
+	return (*file);
 }
 
-static char		*add_char(char *str, char c)
+void			copy_to_nl(char **line, char **current)
 {
-	char	*new;
-	int	len;
-	int	i;
+	char			*start;
+	char			*end;
 
-	len = ft_strlen(str) + 1;
-	if (!(new = ft_strnew(len)))
-		return (NULL);
-	i = 0;
-	while (i < len - 1)
+	start = ft_strdup(*current);
+	end = ft_strchr(start, '\n');
+	if (end != NULL)
 	{
-		*(new + i) = *(str + i);
-		i++;
+		*end++ = '\0';
+		*line = ft_strdup(start);
+		ft_strdel(current);
+		*current = ft_strdup(end);
 	}
-	*(new + i) = c;
-	return (new);
-}
-
-static int		copy_to_new_line(char **dest, char *source)
-{
-	int	i;
-	int	j;
-
-	i = 0;
-	j = 0;
-	while (source[i++])
-		if (source[i] == '\n')
-			break ;
-	if (!(*dest = ft_strnew(1)))
-		return (0);
-	while (source[j] && j < i)
+	else
 	{
-		if (!(*dest = add_char(*dest, source[j])))
-			return (0);
-		j++;
+		*line = ft_strdup(*current);
+		ft_strclr(*current);
 	}
-	return (i);
+	ft_strdel(&start);
 }
 
-int			get_next_line(const int fd, char **line)
+void			copy_line(char *buf, int ret, char **current)
 {
-	char		buf[BUFF_SIZE + 1];
+	char		*str;
+
+	buf[ret] = '\0';
+	str = ft_strjoin(*current, buf);
+	ft_strdel(current);
+	*current = ft_strdup(str);
+	ft_strdel(&str);
+}
+
+int				get_next_line(const int fd, char **line)
+{
+	char			*buf;
 	static t_list	*file;
-	t_list		*current;
-	int		i;
-	int		ret;
+	t_list			*current;
+	int				ret;
 
+	if (!(buf = (char*)malloc(sizeof(char) * BUFF_SIZE + 1)))
+		return (-1);
 	if (fd < 0 || line == NULL || read(fd, buf, 0) < 0)
 		return (-1);
 	current = get_file(&file, fd);
-	if (!(*line = ft_strnew(1)))
-		return (-1);
 	while ((ret = read(fd, buf, BUFF_SIZE)))
 	{
-		buf[ret] = '\0';
-		if (!(current->content = ft_strjoin(current->content, buf)))
-			return (-1);
+		copy_line(buf, ret, (char**)&current->content);
 		if (ft_strchr(buf, '\n'))
 			break ;
 	}
-	if (ret < BUFF_SIZE && !ft_strlen(current->content))
+	if (!ft_strlen(current->content))
 		return (0);
-	i = copy_to_new_line(line, current->content);
-	i < (int)ft_strlen(current->content) ? current->content += (i + 1) : ft_strclr(current->content);
+	copy_to_nl(line, (char**)&current->content);
+	ft_strdel(&buf);
 	return (1);
 }
